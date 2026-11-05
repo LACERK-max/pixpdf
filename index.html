@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PixPDF — مساحة عمل الوثائق</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+</head>
+<body>
+<canvas id="bgCanvas"></canvas>
+<div class="scroll-progress" id="scrollProgress"></div>
+<div class="bg-shape shape1"></div><div class="bg-shape shape2"></div>
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+<div class="logo" id="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>Pix<span>PDF</span></div>
+<div class="search-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="text" id="toolSearch" placeholder="ابحث عن أداة..."></div>
+<nav class="menu" id="menu">
+<details class="menu-group">
+<summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>التحويل</summary>
+<div class="group-items">
+<a href="#/images-to-pdf" data-page="images-to-pdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.35-4.35a1 1 0 0 0-1.42 0L5 21"/></svg>صور إلى PDF</a>
+<a href="#/pdf-to-images" data-page="pdf-to-images"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg>PDF إلى صور</a>
+<a href="#/text-to-pdf" data-page="text-to-pdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg>نص إلى PDF</a>
+<a href="#/ocr" data-page="ocr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>استخراج النصوص</a>
+</div>
+</details>
+<details class="menu-group">
+<summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>أدوات PDF</summary>
+<div class="group-items">
+<a href="#/merge-pdf" data-page="merge-pdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/><path d="M8 12h8"/></svg>دمج PDF</a>
+<a href="#/split-pdf" data-page="split-pdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22V2"/><path d="m21 8-9 9-9-9"/></svg>تقسيم PDF</a>
+<a href="#/edit-pdf" data-page="edit-pdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>تدوير وحذف صفحات</a>
+<a href="#/watermark" data-page="watermark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>علامة مائية</a>
+</div>
+</details>
+<details class="menu-group">
+<summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.35-4.35a1 1 0 0 0-1.42 0L5 21"/></svg>أدوات الصور</summary>
+<div class="group-items">
+<a href="#/resize-images" data-page="resize-images"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>تغيير مقاس الصور</a>
+<a href="#/compress-images" data-page="compress-images"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/></svg>ضغط الصور</a>
+</div>
+</details>
+<details class="menu-group">
+<summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>أدوات سريعة</summary>
+<div class="group-items">
+<a href="#/password" data-page="password"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>مولد كلمات مرور</a>
+<a href="#/text-counter" data-page="text-counter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>عدّاد النصوص</a>
+<a href="#/qr" data-page="qr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M21 14v3"/><path d="M14 21h3"/><path d="M21 21h.01"/></svg>إنشاء QR</a>
+<a href="#/wifi-qr" data-page="wifi-qr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5a12 12 0 0 1 14 0"/><path d="M8.5 15.5a7 7 0 0 1 7 0"/><path d="M12 19h.01"/></svg>QR لـ Wi-Fi</a>
+</div>
+</details>
+<a href="#/how-it-works" data-page="how-it-works" class="home-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>كيف يعمل</a>
+<a href="#/" data-page="home" class="home-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>مساحة العمل</a>
+</nav>
+<div class="sidebar-actions">
+<button class="theme-toggle" id="themeToggle" onclick="toggleTheme()"><svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.9 4.9 1.4 1.4"/><path d="m17.7 17.7 1.4 1.4"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.3 17.7-1.4 1.4"/><path d="m19.1 4.9-1.4 1.4"/></svg><span id="themeLabel">الوضع الفاتح</span></button>
+</div>
+<div class="sidebar-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span>ملفاتك لا تُرفع إلى أي سيرفر</span></div>
+</aside>
+
+<div class="mobile-topbar">
+<div class="logo" id="logoMobile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>Pix<span>PDF</span></div>
+<div class="topbar-actions">
+<button class="theme-toggle small" onclick="toggleTheme()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.9 4.9 1.4 1.4"/><path d="m17.7 17.7 1.4 1.4"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.3 17.7-1.4 1.4"/><path d="m19.1 4.9-1.4 1.4"/></svg></button>
+<button class="menu-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+</div>
+</div>
+
+<main class="content">
+<section id="page-home" class="page active">
+<div class="hero"><h1>مساحة عمل <span>الوثائق</span></h1><p>اسحب الصور وملفات PDF هنا، رتبها، ثم صدّرها كملف PDF واحد. كل شيء يعمل داخل متصفحك.</p></div>
+<div class="card workspace">
+<label class="dropzone" for="wsInput" id="wsZone"><input type="file" id="wsInput" accept="image/png,image/jpeg,application/pdf" multiple hidden><div class="drop-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></div><strong>اسحب الصور وملفات PDF هنا</strong><span>يدعم JPG، PNG، PDF — يمكنك سحب البطاقات لإعادة الترتيب</span></label>
+<div id="wsStats" class="stats-bar" hidden></div>
+<div id="wsGrid" class="ws-grid"></div>
+<div class="actions">
+<button class="btn primary" onclick="exportWorkspace()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>تصدير مساحة العمل PDF</button>
+<button class="btn ghost" onclick="clearWorkspace()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>إفراغ المساحة</button>
+</div>
+<div class="progress-wrap" id="wsProgressWrap" hidden><div class="progress-bar"><div class="progress-fill" id="wsProgress"></div></div><span id="wsProgressText" class="progress-text"></span></div>
+<div id="wsStatus" class="status"></div>
+<div id="wsResult" class="result-area"></div>
+</div>
+</section>
+
+<section id="page-how-it-works" class="page">
+<div class="page-head"><h1>كيف يعمل الموقع</h1><p>شرح مبسط لطريقة عمل الأدوات وخصوصية ملفاتك.</p></div>
+<div class="card">
+<div class="how-grid">
+<div class="how-box"><div class="how-icon c1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><h3>خصوصية كاملة</h3><p>جميع الملفات تُعالج داخل متصفحك. لا يتم رفع أي ملف إلى سيرفر خارجي.</p></div>
+<div class="how-box"><div class="how-icon c2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg></div><h3>سرعة عالية</h3><p>المعالجة تحدث على جهازك مباشرة، بدون وقت انتظار للرفع أو التحميل.</p></div>
+<div class="how-box"><div class="how-icon c3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></div><h3>بدون حساب</h3><p>لا تحتاج تسجيل أو تسجيل دخول. افتح الأداة واستخدمها فورًا.</p></div>
+<div class="how-box"><div class="how-icon c4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg></div><h3>يعمل دون إنترنت*</h3><p>معظم الأدوات تعمل دون إنترنت بعد فتح الصفحة. OCR و QR يحتاجان إنترنت أول مرة.</p></div>
+</div>
+</div>
+</section>
+
+<section id="page-images-to-pdf" class="page">
+<div class="page-head"><h1>صور إلى PDF</h1><p>أضف صور JPG أو PNG، رتبها بالسحب، ثم أنشئ ملف PDF باسم تختاره.</p></div>
+<div class="card">
+<label class="dropzone" for="imgInput" id="imgZone"><input type="file" id="imgInput" accept="image/png,image/jpeg" multiple hidden><div class="drop-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></div><strong>اسحب الصور هنا أو اضغط للاختيار</strong><span>يدعم JPG و PNG — يمكنك سحب الصور لإعادة ترتيبها</span></label>
+<div id="imgStats" class="stats-bar" hidden></div>
+<div id="imgList" class="file-list"></div>
+<div class="actions">
+<button class="btn primary" onclick="imagesToPdf()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>إنشاء PDF</button>
+<button class="btn ghost" onclick="clearImages()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>إفراغ</button>
+</div>
+<div id="imgStatus" class="status"></div><div id="imgResult" class="result-area"></div>
+</div>
+</section>
+
+<section id="page-pdf-to-images" class="page">
+<div class="page-head"><h1>PDF إلى صور</h1><p>حوّل صفحات ملف PDF إلى صور PNG، وحمّلها منفردة أو كملف ZIP.</p></div>
+<div class="card">
+<label class="dropzone" for="pdfInput" id="pdfZone"><input type="file" id="pdfInput" accept="application/pdf" hidden><div class="drop-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></div><strong>اسحب ملف PDF هنا أو اضغط للاختيار</strong><span>يدعم ملف PDF واحد</span></label>
+<div id="pdfSelected" class="file-list" hidden><div class="file-item selected"><div class="file-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg><span class="file-name" id="pdfFileName"></span></div><button class="remove-btn" onclick="clearPdf()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></div>
+<div class="options"><div class="option"><label for="quality"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/></svg>جودة الصور</label><select id="quality"><option value="1">عادية</option><option value="2" selected>عالية</option><option value="3">فائقة</option></select></div></div>
+<div class="actions"><button class="btn primary" onclick="pdfToImages()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>تحويل إلى صور</button></div>
+<div id="pdfStatus" class="status"></div><div id="pdfResult" class="result-area"></div>
+</div>
+</section>
+
+<section id="page-ocr" class="page">
+<div class="page-head"><h1>استخراج النصوص</h1><p>أضف صورة أو ملف PDF، اختر اللغة، ثم استخرج النص الموجود بداخله عبر OCR.</p></div>
+<div class="card">
+<label class="dropzone" for="ocrInput" id="ocrZone"><input type="file" id="ocrInput" accept="image/png,image/jpeg,application/pdf" hidden><div class="drop-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></div><strong>اسحب صورة أو ملف PDF هنا</strong><span>يدعم JPG، PNG، PDF</span></label>
+<div id="ocrSelected" class="file-list" hidden><div class="file-item selected"><div class="file-info"><span class="file-name" id="ocrFileName"></span></div><button class="remove-btn" onclick="clearOcr()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></div>
+<div class="options">
+<div class="option"><label for="ocrLang">لغة النص</label>
+<select id="ocrLang">
+<option value="ara+eng">العربية + الإنجليزية</option>
+<option value="ara">العربية</option>
+<option value="eng">الإنجليزية</option>
+<option value="fra">الفرنسية</option>
+<option value="spa">الإسبانية</option>
+<option value="deu">الألمانية</option>
+</select></div>
+</div>
+<div class="actions">
+<button class="btn primary" onclick="extractText()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>استخراج النص</button>
+<button class="btn ghost" id="copyOcr" onclick="copyOcr()" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>نسخ النص</button>
+<button class="btn success" id="downloadOcr" onclick="downloadOcr()" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>تحميل النص</button>
+</div>
+<div class="progress-wrap" id="ocrProgressWrap" hidden><div class="progress-bar"><div class="progress-fill" id="ocrProgress"></div></div><span id="ocrProgressText" class="progress-text"></span></div>
+<div id="ocrStatus" class="status"></div>
+<div class="field" id="ocrOutputWrap" hidden><label for="ocrOutput">النص المستخرج</label><textarea id="ocrOutput" readonly></textarea></div>
+</div>
+</section>
+
+<section id="page-text-to-pdf" class="page">
+<div class="page-head"><h1>نص إلى PDF</h1><p>اكتب نصك بالعربية أو أي لغة، ثم حوّله إلى ملف PDF جاهز للتحميل.</p></div>
+<div class="card">
+<div class="field"><label for="ttpText">النص</label><textarea id="ttpText" placeholder="اكتب نصك هنا..."></textarea></div>
+<div class="actions"><button class="btn primary" onclick="textToPdf()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>إنشاء PDF</button></div>
+<div id="ttpStatus" class="status"></div><div id="ttpResult" class="result-area"></div>
+</div>
+</section>
+
+<section id="page-merge-pdf" class="page">
+<div class="page-head"><h1>دمج ملفات PDF</h1><p>أضف عدة ملفات PDF، رتبها بالسحب، ثم ادمجها في ملف واحد.</p></div>
+<div class="card">
+<label class="dropzone" for="mergeInput" id="mergeZone"><input type="file" id="mergeInput" accept="application/pdf" multiple hidden><div class="drop-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></div><strong>اسحب ملفات PDF هنا أو اضغط للاختيار</strong><span>يدعم عدة ملفات PDF — يمكنك سحب الملفات لإعادة ترتيبها</span></label>
+<div id="mergeStats" class="stats-bar" hidden></div>
+<div id="mergeList" class="file-list"></div>
+<div class="actions">
+<button class="btn primary" onclick="mergePdfs()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/><path d="M8 12h8"/></svg>دمج الملفات</button>
+<button class="btn ghost" onclick="clearMerge()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>إفراغ</button>
+</div>
+<div id="mergeStatus" class="status"></div><div id="mergeResult" class="result-area"></div>
+</div>
+</section>
+
+<section id="page-split-pdf" class="page">
+<div class="page-head"><h1>تقسيم PDF واستخراج صفحات</h1><p>أضف ملف PDF ثم اكتب الصفحات المطلوبة، مثال: 1-3,5,8-10</p></div>
+<div class="card">
+<label class="dropzone" for="splitInput" id="splitZone"><input type="file" id="splitInput" accept="application/pdf" hidden><div class="drop-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></div><strong>اسحب ملف PDF هنا أو اضغط للاختيار</strong><span>يدعم ملف PDF واحد</span></label>
+<div id="splitSelected" class="file-list" hidden><div class="file-item selected"><div class="file-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg><span class="file-name" id="splitFileName"></span></div><button class="remove-btn" onclick="clearSplit()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></div>
+<div class="options"><div class="option" style="flex:1"><label for="pagesInput">الصفحات المطلوبة</label><input type="text" id="pagesInput" placeholder="مثال: 1-3,5,8-10"></div></div>
+<div class="actions"><button class="btn primary" onclick="splitPdf()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22V2"/><path d="m21 8-9 9-9-9"/></svg>استخراج الصفحات</button></div>
+<div id="splitStatus" class="status"></div><div id="splitResult" class="result-area"></div>
+</div>
+</section>
+
+<section id="page-edit-pdf" class="page">
+<div class="page-head"><h1>تدوير وحذف صفحات PDF</h1><p>أضف ملف PDF، اختر الصفحات، دوّرها أو احذفها، ثم صدّر ملفًا جديدًا. يمكنك سحب الصفحات لإعادة ترتيبها.</p></div>
+<div class="card">
+<label class="dropzone" for="editInput" id="editZone"><input type="file" id="editInput" accept="application/pdf" hidden><div class="drop-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></div><strong>اسحب ملف PDF هنا أو اضغط للاختيار</strong><span>يدعم ملف PDF واحد</span></label>
+<div id="editSelected" class="file-list" hidden><div class="file-item selected"><div class="file-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg><span class="file-name" id="editFileName"></span></div><button class="remove-btn" onclick="clearEdit()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></div>
+<div id="editPages" class="pages-grid"></div>
+<div class="actions">
+<button class="btn primary" onclick="rotateSelected(90)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>تدوير المحدد 90°</button>
+<button class="btn ghost" onclick="deleteSelected()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>حذف المحدد</button>
+<button class="btn success" onclick="exportEditedPdf()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>تصدير PDF جديد</button>
+</div>
+<div id="editStats" class="stats-bar" hidden></div>
+<div id="editStatus" class="status"></div><div id="editResult" class="result-area"></div>
+</div>
+</section>
+
+<section id="page-resize-images" class="page">
+<div class="page-head"><h1>تغيير مقاس الصور</h1><p>أضف صورة، اختر مقاسًا جاهزًا أو أدخل الأبعاد يدويًا، ثم حمّل الصورة.</p></div>
+<div class="card">
+<label class="dropzone" for="resizeInput" id="resizeZone"><input type="file" id="resizeInput" accept="image/png,image/jpeg" hidden><div class="drop-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></div><strong>اسحب صورة هنا أو اضغط للاختيار</strong><span>يدعم JPG و PNG</span></label>
+<div id="resizeSelected" class="file-list" hidden><div class="file-item selected"><div class="file-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.35-4.35a1 1 0 0 0-1.42 0L5 21"/></svg><span class="file-name" id="resizeFileName"></span></div><button class="remove-btn" onclick="clearResize()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></div>
+<div class="options">
+<div class="option"><label for="resizePreset">مقاس جاهز</label><select id="resizePreset" onchange="applyPreset()"><option value="">اختيار يدوي</option><option value="1080x1080">مربع 1080×1080</option><option value="1080x1350">إنستغرام 1080×1350</option><option value="1080x1920">ستوري 1080×1920</option><option value="1280x720">يوتيوب 1280×720</option><option value="2480x3508">A4 300dpi</option></select></div>
+<div class="option"><label for="resizeWidth">العرض</label><input type="number" id="resizeWidth" placeholder="px"></div>
+<div class="option"><label for="resizeHeight">الارتفاع</label><input type="number" id="resizeHeight" placeholder="px"></div>
+</div>
+<div class="actions"><button class="btn primary" onclick="resizeImage()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>تطبيق المقاس</button></div>
+<div id="resizeStatus" class="status"></div><div id="resizeResult" class="result-area"></div>
+</div>
+</section>
+
+<section id="page-watermark" class="page">
+<div class="page-head"><h1>علامة مائية</h1><p>أضف نصًا فوق صورة أو فوق كل صفحات ملف PDF. يدعم النص العربي.</p></div>
+<div class="card">
+<label class="dropzone" for="wmInput" id="wmZone"><input type="file" id="wmInput" accept="image/png,image/jpeg,application/pdf" hidden><div class="drop-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></div><strong>اسحب صورة أو ملف PDF هنا</strong><span>يدعم JPG، PNG، PDF</span></label>
+<div id="wmSelected" class="file-list" hidden><div class="file-item selected"><div class="file-info"><span class="file-name" id="wmFileName"></span></div><button class="remove-btn" onclick="clearWatermark()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></div>
+<div class="options">
+<div class="option" style="flex:1"><label for="wmText">نص العلامة المائية</label><input type="text" id="wmText" placeholder="مثال: نسخة خاصة"></div>
+<div class="option"><label for="wmOpacity">الشفافية</label><select id="wmOpacity"><option value="0.2">خفيفة</option><option value="0.4" selected>متوسطة</option><option value="0.7">قوية</option></select></div>
+</div>
+<div class="actions"><button class="btn primary" onclick="addWatermark()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>إضافة العلامة المائية</button></div>
+<div id="wmStatus" class="status"></div><div id="wmResult" class="result-area"></div>
+</div>
+</section>
+
+<section id="page-compress-images" class="page">
+<div class="page-head"><h1>ضغط الصور</h1><p>قلّل حجم صور JPG أو PNG باختيار مستوى الضغط، ثم حمّلها منفردة أو كملف ZIP.</p></div>
+<div class="card">
+<label class="dropzone" for="compressInput" id="compressZone"><input type="file" id="compressInput" accept="image/png,image/jpeg" multiple hidden><div class="drop-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></div><strong>اسحب الصور هنا أو اضغط للاختيار</strong><span>يدعم JPG و PNG</span></label>
+<div id="compressList" class="file-list"></div>
+<div class="options"><div class="option"><label for="compressLevel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/></svg>مستوى الضغط</label><select id="compressLevel"><option value="0.9">خفيف — جودة عالية</option><option value="0.7" selected>متوسط — الأفضل</option><option value="0.5">قوي — حجم أصغر</option></select></div></div>
+<div class="actions">
+<button class="btn primary" onclick="compressImages()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/></svg>ضغط الصور</button>
+<button class="btn ghost" onclick="clearCompress()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>إفراغ</button>
+</div>
+<div id="compressStatus" class="status"></div><div id="compressResult" class="result-area"></div>
+</div>
+</section>
+
+<section id="page-password" class="page">
+<div class="page-head"><h1>مولد كلمات مرور</h1><p>أنشئ كلمة مرور قوية وقابلة للتخصيص.</p></div>
+<div class="card">
+<div class="options">
+<div class="option"><label for="passLength">الطول</label><input type="number" id="passLength" value="16" min="6" max="64"></div>
+<div class="option"><label><input type="checkbox" id="passUpper" checked> أحرف كبيرة</label></div>
+<div class="option"><label><input type="checkbox" id="passNumbers" checked> أرقام</label></div>
+<div class="option"><label><input type="checkbox" id="passSymbols" checked> رموز</label></div>
+</div>
+<div class="actions">
+<button class="btn primary" onclick="generatePassword()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>إنشاء كلمة مرور</button>
+<button class="btn ghost" id="copyPass" onclick="copyPassword()" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>نسخ</button>
+</div>
+<div id="passResult" class="pass-result" hidden></div>
+<div id="passStatus" class="status"></div>
+</div>
+</section>
+
+<section id="page-text-counter" class="page">
+<div class="page-head"><h1>عدّاد النصوص</h1><p>اكتب أو الصق نصًا لحساب الكلمات والأحرف والأسطر فورًا.</p></div>
+<div class="card">
+<textarea id="counterText" placeholder="اكتب أو الصق نصك هنا..."></textarea>
+<div class="counter-grid">
+<div class="counter-box"><strong id="wordsCount">0</strong><span>كلمة</span></div>
+<div class="counter-box"><strong id="charsCount">0</strong><span>حرف</span></div>
+<div class="counter-box"><strong id="linesCount">0</strong><span>سطر</span></div>
+<div class="counter-box"><strong id="sentencesCount">0</strong><span>جملة</span></div>
+</div>
+</div>
+</section>
+
+<section id="page-qr" class="page">
+<div class="page-head"><h1>إنشاء رمز QR</h1><p>أنشئ رمز QR لرابط أو نص، واختر حجمه ولونه، ثم حمّله كصورة PNG.</p></div>
+<div class="card">
+<div class="qr-form">
+<div class="field"><label for="qrText">المحتوى</label><input type="text" id="qrText" placeholder="مثال: https://example.com"></div>
+<div class="field"><label for="qrSize">الحجم</label><select id="qrSize"><option value="256">صغير</option><option value="400" selected>متوسط</option><option value="600">كبير</option></select></div>
+<div class="field"><label for="qrColor">لون الرمز</label><input type="color" id="qrColor" value="#0b1020"></div>
+</div>
+<div class="actions">
+<button class="btn primary" onclick="generateQR()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>إنشاء QR</button>
+<button class="btn success" id="qrDownload" onclick="downloadQR()" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>تحميل QR</button>
+</div>
+<div id="qrStatus" class="status"></div><div id="qrResult" class="qr-result"></div>
+</div>
+</section>
+
+<section id="page-wifi-qr" class="page">
+<div class="page-head"><h1>QR لـ Wi-Fi</h1><p>أدخل اسم الشبكة وكلمة المرور، ثم أنشئ رمز QR للاتصال السريع.</p></div>
+<div class="card">
+<div class="qr-form">
+<div class="field"><label for="wifiSsid">اسم الشبكة</label><input type="text" id="wifiSsid" placeholder="مثال: MyWiFi"></div>
+<div class="field"><label for="wifiPass">كلمة المرور</label><input type="text" id="wifiPass" placeholder="كلمة مرور الشبكة"></div>
+<div class="field"><label for="wifiEnc">التشفير</label><select id="wifiEnc"><option value="WPA">WPA/WPA2</option><option value="WEP">WEP</option><option value="nopass">بدون كلمة مرور</option></select></div>
+</div>
+<div class="actions">
+<button class="btn primary" onclick="generateWifiQR()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>إنشاء QR</button>
+<button class="btn success" id="wifiDownload" onclick="downloadWifiQR()" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>تحميل QR</button>
+</div>
+<div id="wifiStatus" class="status"></div><div id="wifiResult" class="qr-result"></div>
+</div>
+</section>
+
+</main>
+</div>
+<script src="script.js"></script>
+</body>
+</html>
