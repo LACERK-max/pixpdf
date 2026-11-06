@@ -12,6 +12,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
 <canvas id="bgCanvas"></canvas>
@@ -56,6 +59,8 @@
 <a href="#/wifi-qr" data-page="wifi-qr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5a12 12 0 0 1 14 0"/><path d="M8.5 15.5a7 7 0 0 1 7 0"/><path d="M12 19h.01"/></svg>QR لـ Wi-Fi</a>
 </div>
 </details>
+<a href="#/account" data-page="account" class="home-link" id="accountLink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 16 0v1"/></svg>الحساب</a>
+<a href="#/admin" data-page="admin" class="home-link" id="adminLink" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v6c0 5 4 9 9 9s9-4 9-9V7l-9-5z"/></svg>لوحة الأدمن</a>
 <a href="#/how-it-works" data-page="how-it-works" class="home-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>كيف يعمل</a>
 <a href="#/" data-page="home" class="home-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>مساحة العمل</a>
 </nav>
@@ -90,14 +95,65 @@
 </div>
 </section>
 
+<section id="page-login" class="page">
+<div class="page-head"><h1>تسجيل الدخول</h1><p>ادخل إلى حسابك للوصول إلى ميزات VIP ولوحة الأدمن.</p></div>
+<div class="card auth-card">
+<div class="field"><label for="loginEmail">البريد الإلكتروني</label><input type="email" id="loginEmail" placeholder="example@mail.com"></div>
+<div class="field"><label for="loginPassword">كلمة المرور</label><input type="password" id="loginPassword" placeholder="••••••••"></div>
+<div class="actions">
+<button class="btn primary" onclick="doLogin()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></svg>تسجيل الدخول</button>
+<button class="btn ghost" onclick="googleLogin()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>الدخول بـ Google</button>
+</div>
+<div class="auth-links"><a href="#/register">إنشاء حساب جديد</a><a href="#" onclick="resetPassword()">نسيت كلمة المرور؟</a></div>
+<div id="loginStatus" class="status"></div>
+</div>
+</section>
+
+<section id="page-register" class="page">
+<div class="page-head"><h1>إنشاء حساب</h1><p>أنشئ حسابًا للوصول إلى ميزات إضافية ومساحة عمل محفوظة.</p></div>
+<div class="card auth-card">
+<div class="field"><label for="regName">الاسم</label><input type="text" id="regName" placeholder="اسمك"></div>
+<div class="field"><label for="regEmail">البريد الإلكتروني</label><input type="email" id="regEmail" placeholder="example@mail.com"></div>
+<div class="field"><label for="regPassword">كلمة المرور</label><input type="password" id="regPassword" placeholder="••••••••"></div>
+<div class="field"><label for="regConfirm">تأكيد كلمة المرور</label><input type="password" id="regConfirm" placeholder="••••••••"></div>
+<div class="actions"><button class="btn primary" onclick="doRegister()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>إنشاء الحساب</button></div>
+<div class="auth-links"><a href="#/login">لدي حساب بالفعل</a></div>
+<div id="registerStatus" class="status"></div>
+</div>
+</section>
+
+<section id="page-account" class="page">
+<div class="page-head"><h1>حسابي</h1><p>إدارة حسابك وحالة VIP.</p></div>
+<div class="card auth-card">
+<div id="accountInfo" class="account-info"></div>
+<div class="actions">
+<button class="btn primary" id="vipBtn" onclick="upgradeVip()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v6c0 5 4 9 9 9s9-4 9-9V7l-9-5z"/></svg>ترقية إلى VIP</button>
+<button class="btn ghost" onclick="doLogout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>تسجيل الخروج</button>
+</div>
+<div id="accountStatus" class="status"></div>
+</div>
+</section>
+
+<section id="page-admin" class="page">
+<div class="page-head"><h1>لوحة الأدمن</h1><p>إدارة المستخدمين وتفعيل VIP.</p></div>
+<div class="card auth-card">
+<div class="admin-stats" id="adminStats"></div>
+<div class="field"><label for="adminSearch">ابحث بالبريد أو UID</label><input type="text" id="adminSearch" placeholder="example@mail.com أو UID"></div>
+<div class="actions"><button class="btn primary" onclick="adminSearchUser()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>بحث</button></div>
+<div id="adminResult" class="admin-result"></div>
+<div id="adminStatus" class="status"></div>
+<div class="actions"><button class="btn ghost" onclick="doLogout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>تسجيل الخروج</button></div>
+</div>
+</section>
+
 <section id="page-how-it-works" class="page">
 <div class="page-head"><h1>كيف يعمل الموقع</h1><p>شرح مبسط لطريقة عمل الأدوات وخصوصية ملفاتك.</p></div>
 <div class="card">
 <div class="how-grid">
 <div class="how-box"><div class="how-icon c1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><h3>خصوصية كاملة</h3><p>جميع الملفات تُعالج داخل متصفحك. لا يتم رفع أي ملف إلى سيرفر خارجي.</p></div>
 <div class="how-box"><div class="how-icon c2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg></div><h3>سرعة عالية</h3><p>المعالجة تحدث على جهازك مباشرة، بدون وقت انتظار للرفع أو التحميل.</p></div>
-<div class="how-box"><div class="how-icon c3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></div><h3>بدون حساب</h3><p>لا تحتاج تسجيل أو تسجيل دخول. افتح الأداة واستخدمها فورًا.</p></div>
-<div class="how-box"><div class="how-icon c4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg></div><h3>يعمل دون إنترنت*</h3><p>معظم الأدوات تعمل دون إنترنت بعد فتح الصفحة. OCR و QR يحتاجان إنترنت أول مرة.</p></div>
+<div class="how-box"><div class="how-icon c3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></div><h3>بدون حساب</h3><p>يمكنك استخدام الأدوات كزائر. الحساب يضيف ميزات VIP وحفظ المساحة.</p></div>
+<div class="how-box"><div class="how-icon c4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg></div><h3>VIP عبر واتساب</h3><p>لترقية حسابك، تواصل معنا عبر واتساب، وبعد الدفع يتم تفعيل VIP من لوحة الأدمن.</p></div>
 </div>
 </div>
 </section>
