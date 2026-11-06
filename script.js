@@ -1,5 +1,19 @@
 pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
+/* ===== Firebase ===== */
+const firebaseConfig={
+apiKey:"AIzaSyDQUTYHiabZUHboFTsg9pI5nGj_aYo474E",
+authDomain:"pixpdfwork.firebaseapp.com",
+projectId:"pixpdfwork",
+storageBucket:"pixpdfwork.firebasestorage.app",
+messagingSenderId:"689402039231",
+appId:"1:689402039231:web:798f8f9a09440b9468ef0a"
+};
+firebase.initializeApp(firebaseConfig);
+const auth=firebase.auth();
+const db=firebase.firestore();
+let currentUser=null,currentRole="user",currentVip=false;
+
 function applyTheme(t){document.documentElement.dataset.theme=t;const l=document.getElementById("themeLabel");if(l)l.textContent=t==="dark"?"الوضع الفاتح":"الوضع الداكن";localStorage.setItem("pixpdf-theme",t)}
 function toggleTheme(){applyTheme(document.documentElement.dataset.theme==="dark"?"light":"dark")}
 applyTheme(localStorage.getItem("pixpdf-theme")||"dark");
@@ -37,6 +51,8 @@ target.classList.add("active");
 document.querySelectorAll(".menu a").forEach(a=>a.classList.toggle("active",a.dataset.page===(document.getElementById("page-"+page)?page:"home")));
 document.getElementById("sidebar").classList.remove("open");
 window.scrollTo({top:0,behavior:"smooth"});
+if(page==="admin")renderAdminStats();
+if(page==="account")renderAccount();
 }
 window.addEventListener("hashchange",showPage);showPage();
 
@@ -77,6 +93,179 @@ item.addEventListener("dragend",()=>{item.classList.remove("dragging");window._d
 item.addEventListener("dragover",e=>{e.preventDefault();if(window._dragEl&&window._dragEl!==item)item.classList.add("drag-over")});
 item.addEventListener("dragleave",()=>item.classList.remove("drag-over"));
 item.addEventListener("drop",e=>{e.preventDefault();item.classList.remove("drag-over");if(window._dragEl&&window._dragEl!==item){const from=[...item.parentNode.children].indexOf(window._dragEl);const to=[...item.parentNode.children].indexOf(item);onReorder(from,to)}});
+}
+
+/* ===== Auth ===== */
+auth.onAuthStateChanged(async user=>{
+currentUser=user;
+updateUserUI(user);
+if(user){
+try{
+const doc=await db.collection("users").doc(user.uid).get();
+if(doc.exists){
+currentRole=doc.data().role||"user";
+currentVip=!!doc.data().vipActive;
+}else{
+await db.collection("users").doc(user.uid).set({
+email:user.email||"",
+displayName:user.displayName||"",
+role:"user",
+vipActive:false,
+createdAt:firebase.firestore.FieldValue.serverTimestamp()
+});
+currentRole="user";currentVip=false;
+}
+}catch(e){currentRole="user";currentVip=false}
+}else{currentRole="user";currentVip=false}
+updateUserUI(user);
+showPage();
+});
+
+function updateUserUI(user){
+const chip=document.getElementById("userChip");
+const accountLink=document.getElementById("accountLink");
+const adminLink=document.getElementById("adminLink");
+if(user){
+chip.hidden=false;
+chip.innerHTML=`<strong>${user.email||"مستخدم"}</strong><button onclick="doLogout()">خروج</button>`;
+accountLink.hidden=false;
+if(currentRole==="admin")adminLink.hidden=false;else adminLink.hidden=true;
+}else{
+chip.hidden=true;
+accountLink.hidden=false;
+adminLink.hidden=true;
+}
+}
+
+function doLogin(){
+const email=document.getElementById("loginEmail").value.trim();
+const pass=document.getElementById("loginPassword").value;
+const status=document.getElementById("loginStatus");
+if(!email||!pass){setStatus(status,"warning","أدخل البريد وكلمة المرور.");return}
+setStatus(status,"loading","جارٍ تسجيل الدخول...");
+auth.signInWithEmailAndPassword(email,pass).then(()=>{
+setStatus(status,"success","تم تسجيل الدخول بنجاح.");
+location.hash="#/account";
+}).catch(e=>{
+let msg="تعذر تسجيل الدخول.";
+if(e.code==="auth/user-not-found")msg="لا يوجد حساب بهذا البريد. أنشئ حسابًا جديدًا.";
+else if(e.code==="auth/wrong-password")msg="كلمة المرور غير صحيحة. جرّب مرة أخرى أو استعد كلمة المرور.";
+else if(e.code==="auth/invalid-email")msg="صيغة البريد غير صحيحة.";
+setStatus(status,"error",msg);
+});
+}
+function googleLogin(){
+const status=document.getElementById("loginStatus");
+setStatus(status,"loading","جارٍ الدخول بـ Google...");
+const provider=new firebase.auth.GoogleAuthProvider();
+auth.signInWithPopup(provider).then(()=>{
+setStatus(status,"success","تم الدخول بـ Google بنجاح.");
+location.hash="#/account";
+}).catch(e=>setStatus(status,"error","تعذر الدخول بـ Google. تأكد من السماح بالنوافذ المنبثقة."));
+}
+function doRegister(){
+const name=document.getElementById("regName").value.trim();
+const email=document.getElementById("regEmail").value.trim();
+const pass=document.getElementById("regPassword").value;
+const confirm=document.getElementById("regConfirm").value;
+const status=document.getElementById("registerStatus");
+if(!name||!email||!pass){setStatus(status,"warning","أكمل جميع الحقول.");return}
+if(pass!==confirm){setStatus(status,"warning","كلمتا المرور غير متطابقتين.");return}
+if(pass.length<6){setStatus(status,"warning","كلمة المرور يجب أن تكون 6 أحرف على الأقل.");return}
+setStatus(status,"loading","جارٍ إنشاء الحساب...");
+auth.createUserWithEmailAndPassword(email,pass).then(cred=>{
+return cred.user.updateProfile({displayName:name}).then(()=>{
+return db.collection("users").doc(cred.user.uid).set({
+email:email,displayName:name,role:"user",vipActive:false,
+createdAt:firebase.firestore.FieldValue.serverTimestamp()
+});
+});
+}).then(()=>{
+setStatus(status,"success","تم إنشاء الحساب بنجاح.");
+location.hash="#/account";
+}).catch(e=>{
+let msg="تعذر إنشاء الحساب.";
+if(e.code==="auth/email-already-in-use")msg="البريد مستخدم بالفعل. جرّب تسجيل الدخول.";
+else if(e.code==="auth/weak-password")msg="كلمة المرور ضعيفة. استخدم 6 أحرف على الأقل.";
+setStatus(status,"error",msg);
+});
+}
+function doLogout(){
+auth.signOut().then(()=>{location.hash="#/";showPage()});
+}
+function resetPassword(){
+const email=document.getElementById("loginEmail").value.trim();
+const status=document.getElementById("loginStatus");
+if(!email){setStatus(status,"warning","أدخل بريدك أولًا لاستعادة كلمة المرور.");return}
+setStatus(status,"loading","جارٍ إرسال رابط الاستعادة...");
+auth.sendPasswordResetEmail(email).then(()=>{
+setStatus(status,"success","تم إرسال رابط استعادة كلمة المرور إلى بريدك.");
+}).catch(e=>setStatus(status,"error","تعذر إرسال البريد. تأكد من صحة البريد."));
+}
+function renderAccount(){
+const info=document.getElementById("accountInfo");
+const status=document.getElementById("accountStatus");
+if(!currentUser){
+info.innerHTML=`<div class="account-row"><span>الحالة</span><strong>غير مسجل</strong></div><div class="account-row"><span>النوع</span><span class="badge-user">زائر</span></div>`;
+document.getElementById("vipBtn").hidden=true;
+return;
+}
+const roleBadge=currentRole==="admin"?`<span class="badge-admin">أدمن</span>`:currentVip?`<span class="badge-vip">VIP</span>`:`<span class="badge-user">مجاني</span>`;
+info.innerHTML=`<div class="account-row"><span>البريد</span><strong>${currentUser.email||"—"}</strong></div><div class="account-row"><span>الاسم</span><strong>${currentUser.displayName||"—"}</strong></div><div class="account-row"><span>النوع</span>${roleBadge}</div>`;
+document.getElementById("vipBtn").hidden=currentRole==="admin"||currentVip;
+if(currentRole==="admin")document.getElementById("adminLink").hidden=false;
+}
+function upgradeVip(){
+const email=currentUser?currentUser.email:"";
+const text=encodeURIComponent(`مرحبًا، أريد ترقية حسابي إلى VIP في PixPDF.\nالبريد: ${email}`);
+window.open(`https://wa.me/?text=${text}`,"_blank");
+setStatus(document.getElementById("accountStatus"),"success","تم فتح واتساب لإرسال طلب الترقية.");
+}
+
+/* ===== Admin ===== */
+let adminUser=null;
+function renderAdminStats(){
+const stats=document.getElementById("adminStats");
+if(currentRole!=="admin"){stats.innerHTML="";return}
+setStatus(document.getElementById("adminStatus"),"loading","جارٍ تحميل الإحصائيات...");
+db.collection("users").get().then(snap=>{
+const total=snap.size;
+let vips=0,admins=0;
+snap.forEach(d=>{const r=d.data().role;if(r==="vip"||d.data().vipActive)vips++;if(r==="admin")admins++});
+stats.innerHTML=`<span class="stat-chip">${icons.files}<strong>${total}</strong> مستخدم</span><span class="stat-chip">${icons.pages}<strong>${vips}</strong> VIP</span><span class="stat-chip">${icons.pdf}<strong>${admins}</strong> أدمن</span>`;
+clearStatus(document.getElementById("adminStatus"));
+}).catch(e=>setStatus(document.getElementById("adminStatus"),"error","تعذر تحميل الإحصائيات. تأكد من قواعد الأمان."));
+}
+function adminSearchUser(){
+const q=document.getElementById("adminSearch").value.trim();
+const result=document.getElementById("adminResult");
+const status=document.getElementById("adminStatus");
+if(currentRole!=="admin"){setStatus(status,"error","هذه الصفحة للأدمن فقط. سجّل الدخول بحساب الأدمن.");return}
+if(!q){setStatus(status,"warning","أدخل بريدًا أو UID للبحث.");return}
+setStatus(status,"loading","جارٍ البحث...");
+const isEmail=q.includes("@");
+let query;
+if(isEmail)query=db.collection("users").where("email","==",q);
+else query=db.collection("users").where(firebase.firestore.FieldPath.documentId(),"==",q);
+query.get().then(snap=>{
+if(snap.empty){setStatus(status,"warning","لا يوجد مستخدم بهذا البريد أو UID.");result.innerHTML="";return}
+const doc=snap.docs[0];adminUser=doc;
+const d=doc.data();
+const role=d.role||"user";
+const badge=role==="admin"?`<span class="badge-admin">أدمن</span>`:(d.vipActive?`<span class="badge-vip">VIP</span>`:`<span class="badge-user">مجاني</span>`);
+result.innerHTML=`<div class="user-card"><div class="row"><span>البريد</span><strong>${d.email||"—"}</strong></div><div class="row"><span>الاسم</span><strong>${d.displayName||"—"}</strong></div><div class="row"><span>UID</span><strong>${doc.id}</strong></div><div class="row"><span>النوع</span>${badge}</div><div class="user-actions"><button class="btn success" onclick="setVip(true)">تفعيل VIP</button><button class="btn ghost" onclick="setVip(false)">إلغاء VIP</button></div></div>`;
+setStatus(status,"success","تم العثور على المستخدم.");
+}).catch(e=>setStatus(status,"error","تعذر البحث. تأكد من قواعد الأمان وصلاحية الأدمن."));
+}
+function setVip(active){
+const status=document.getElementById("adminStatus");
+if(!adminUser){setStatus(status,"warning","ابحث عن مستخدم أولًا.");return}
+if(currentRole!=="admin"){setStatus(status,"error","هذه العملية للأدمن فقط.");return}
+setStatus(status,"loading","جارٍ التحديث...");
+adminUser.ref.update({vipActive:active,role:active?"vip":"user"}).then(()=>{
+setStatus(status,"success",active?"تم تفعيل VIP بنجاح.":"تم إلغاء VIP بنجاح.");
+adminSearchUser();
+}).catch(e=>setStatus(status,"error","تعذر التحديث. تأكد من قواعد الأمان وصلاحية الأدمن."));
 }
 
 /* ===== Workspace ===== */
