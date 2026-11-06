@@ -99,12 +99,21 @@ item.addEventListener("drop",e=>{e.preventDefault();item.classList.remove("drag-
 auth.onAuthStateChanged(async user=>{
 currentUser=user;
 updateUserUI(user);
+
 if(user){
 try{
+// 1) اقرأ الصلاحية من ID Token (Custom Claims)
+const idTokenResult=await user.getIdTokenResult(true);
+const claims=idTokenResult.claims||{};
+const tokenRole=claims.role||null;
+
+// 2) اقرأ بيانات Firestore للعرض فقط
 const doc=await db.collection("users").doc(user.uid).get();
+let firestoreRole="user";
+let vip=false;
 if(doc.exists){
-currentRole=doc.data().role||"user";
-currentVip=!!doc.data().vipActive;
+firestoreRole=doc.data().role||"user";
+vip=!!doc.data().vipActive;
 }else{
 await db.collection("users").doc(user.uid).set({
 email:user.email||"",
@@ -113,10 +122,26 @@ role:"user",
 vipActive:false,
 createdAt:firebase.firestore.FieldValue.serverTimestamp()
 });
-currentRole="user";currentVip=false;
 }
-}catch(e){currentRole="user";currentVip=false}
-}else{currentRole="user";currentVip=false}
+
+// 3) حدد الدور الفعلي من التوكن أولًا
+currentRole=tokenRole==="admin"?"admin":(firestoreRole==="admin"?"admin":"user");
+currentVip=vip;
+
+// 4) إذا كان الأدمن في التوكن لكن Firestore ما زال user، حدّث Firestore للعرض
+if(currentRole==="admin"&&firestoreRole!=="admin"){
+await db.collection("users").doc(user.uid).update({role:"admin"});
+}
+
+}catch(e){
+currentRole="user";
+currentVip=false;
+}
+}else{
+currentRole="user";
+currentVip=false;
+}
+
 updateUserUI(user);
 renderAccount();
 showPage();
